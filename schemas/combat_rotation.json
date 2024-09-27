@@ -1,0 +1,1541 @@
+{
+  "$id": "https://berserk.com/rotation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "World of Warccraft combat emulator rotation description",
+  "type": "object",
+  "required": ["class", "spec", "expansion", "productId"],
+  "additionalProperties": false,
+  "properties": {
+    "productId": {
+      "type": "string"
+    },
+    "isStrict": {
+      "description": "Does this rotation prevent major changes, like adding new modules, steps, etc",
+      "type": "boolean"
+    },
+    "class": {
+      "type": "string",
+      "enum": ["death_knight", "druid", "hunter", "mage", "paladin", "priest", "rogue", "shaman", "warlock", "warrior", "monk", "demon_hunter"]
+    },
+    "spec": {
+      "type": "string",
+      "enum": [
+        "frost",
+        "unholy",
+        "blood",
+        "balance",
+        "feral",
+        "guardian",
+        "restoration",
+        "assassination",
+        "outlaw",
+        "combat",
+        "subtlety",
+        "elemental",
+        "enhancement",
+        "arcane",
+        "fire",
+        "protection",
+        "retribution",
+        "arms",
+        "fury",
+        "affliction",
+        "demonology",
+        "destruction",
+        "beast_mastery",
+        "marksmanship",
+        "survival",
+        "discipline",
+        "holy",
+        "shadow",
+        "brewmaster",
+        "windwalker",
+        "mistweaver",
+        "havoc",
+        "vengeance",
+        "general"
+      ]
+    },
+    "expansion": {
+      "type": "string",
+      "enum": ["Classic", "WotLK", "Dragonflight"]
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/moduleId"
+      }
+    },
+    "hotkeyMap": {
+      "type": "object",
+      "description": "hotkeys for pixel unlocker",
+      "additionalProperties": {
+        "required": ["key"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9",
+              "0",
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f",
+              "g",
+              "h",
+              "i",
+              "j",
+              "k",
+              "l",
+              "m",
+              "n",
+              "o",
+              "p",
+              "q",
+              "r",
+              "s",
+              "t",
+              "u",
+              "v",
+              "w",
+              "x",
+              "y",
+              "z",
+              "mouse-wheel-down"
+            ],
+            "description": "Keyboard key to press"
+          },
+          "modifiers": {
+            "type": "array",
+            "description": "Keyboard modifiers to press with key",
+            "items": {
+              "type": "string",
+              "enum": ["shift", "ctrl", "alt"]
+            }
+          }
+        }
+      }
+    },
+    "prioritizeOutOfCombat": {
+      "type": "boolean",
+      "default": false,
+      "description": "Prioritize steps form `outOfCombat` set of actions"
+    },
+    "inCombat": {
+      "deprecationMessage": "Use 'steps' instead",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/rotationStep"
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/rotationStep"
+      }
+    },
+    "outOfCombat": {
+      "deprecationMessage": "Use 'steps' instead with outOfCombat flag",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/rotationStep"
+      }
+    },
+    "variables": {
+      "type": "object",
+      "additionalProperties": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["number"]
+          },
+          "default": {
+            "type": ["string", "number"]
+          },
+          "resolvers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["criteria", "value"],
+              "additionalProperties": false,
+              "properties": {
+                "criteria": {
+                  "$ref": "#/definitions/rotationCriteria"
+                },
+                "value": {
+                  "type": ["number", "string"]
+                },
+                "unitSort":  {
+                  "$ref": "#/definitions/unitSort"
+                },
+                "units":  {
+                  "$ref": "#/definitions/units"
+                }
+              }
+            }
+          }
+        }
+      }
+
+    }
+  },
+  "definitions": {
+    "conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["op", "value"],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [">", "<", "==", ">=", "<=", "!="]
+          },
+          "value": {
+            "oneOf": [{
+              "type": "number",
+              "description": "constant value",
+              "minimum": 0
+            }, {
+              "type": "string",
+              "description": "variable",
+              "format": "^[$][a-zA-Z0-9_]+$"
+            }]
+          }
+        }
+      }
+    },
+    "distanceCriterion": {
+      "type": "object",
+      "required": ["conditions"],
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "$ref": "#/definitions/criterionUnit",
+          "deprecationMessage": "Use 'unit2' instead"
+        },
+        "unit1": {
+          "$ref": "#/definitions/criterionUnit",
+          "default": "player"
+        },
+        "unit2": {
+          "$ref": "#/definitions/criterionUnit"
+        },
+        "conditions": {
+          "$ref": "#/definitions/conditions"
+        }
+      }
+    },
+    "targetedByCriterion": {
+      "type": "object",
+      "required": ["conditions"],
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "$ref": "#/definitions/criterionUnit"
+        },
+
+        "conditions": {
+          "$ref": "#/definitions/conditions"
+        }
+      }
+    },
+    "castingCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "castingTime"],
+      "properties": {
+        "unit": {
+          "$ref": "#/definitions/criterionUnit"
+        },
+        "spellIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/spellId"
+          }
+        },
+        "isInterruptable": {
+          "type": "boolean",
+          "description": "Does casting spell is interruptable"
+        },
+        "castingTime": {
+          "type": "object",
+          "required": ["conditions"],
+          "additionalProperties": false,
+          "properties": {
+            "remainingMode": {
+              "type": "boolean"
+            },
+            "conditions": {
+              "$ref": "#/definitions/conditions"
+            }
+          }
+        }
+      }
+    },
+    "channelingCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "channelTime"],
+      "properties": {
+        "unit": {
+          "$ref": "#/definitions/criterionUnit"
+        },
+        "spellIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/spellId"
+          }
+        },
+        "isInterruptable": {
+          "type": "boolean",
+          "description": "Does channel spell is interruptable"
+        },
+        "channelTime": {
+          "type": "object",
+          "required": ["conditions"],
+          "additionalProperties": false,
+          "properties": {
+            "remainingMode": {
+              "type": "boolean"
+            },
+            "conditions": {
+              "$ref": "#/definitions/conditions"
+            }
+          }
+        }
+      }
+    },
+    "checkUnitsCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "units"
+      ],
+      "properties": {
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["partyN", "raidN", "player", "focus", "focustarget", "target"]
+          }
+        },
+        "conditions": {
+          "$ref": "#/definitions/conditions"
+        },
+        "criteria": {
+          "$ref": "#/definitions/rotationCriteria"
+        }
+      }
+    },
+    "powerCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "conditions"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["energy", "comboPoints", "mana", "lunarPower", "maelstrom", "rage", "holyPower", "fury", "pain", "focus"]
+        },
+        "unit": {
+          "$ref": "#/definitions/criterionUnit"
+        },
+        "missingMode": {
+          "type": "boolean",
+          "default": false
+        },
+        "valueInPercent": {
+          "type": "boolean",
+          "default": false
+        },
+        "conditions": {
+          "$ref": "#/definitions/conditions"
+        }
+      }
+    },
+    "totemCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["isExists"],
+      "properties": {
+        "index": {
+          "type": "number",
+          "description": "Totem's index (1-4)",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "icon": {
+          "type": "number",
+          "description": "Totem's Icon ID"
+        },
+        "isExists": {
+          "type": "boolean",
+          "description": "Is totem exists"
+        }
+      }
+    },
+    "staggerCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "conditions"],
+      "properties": {
+        "unit": {
+          "$ref": "#/definitions/criterionUnit"
+        },
+        "conditions": {
+          "$ref": "#/definitions/conditions"
+        },
+        "valueInPercent": {
+          "type": "boolean",
+          "default": true
+        },
+        "missingMode": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "healthCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "conditions"],
+      "properties": {
+        "missingMode": {
+          "type": "boolean",
+          "default": false
+        },
+        "valueInPercent": {
+          "type": "boolean",
+          "default": true
+        },
+        "unit": {
+          "$ref": "#/definitions/criterionUnit"
+        },
+        "conditions": {
+          "$ref": "#/definitions/conditions"
+        }
+      }
+    },
+    "unit": {
+      "type": "string",
+      "enum": ["target", "player", "pet", "targettarget", "focustarget", "focus"]
+    },
+    "criterionUnit": {
+      "type": "string",
+      "enum": ["target", "player", "pet", "targettarget", "focustarget", "focus", "partyN", "raidN", "_generic_unit"],
+      "description": "unit to check aura on. `partyN` = 'any party member' synergize with step's `partyN*` unit."
+    },
+    "spell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/spellId"
+        },
+        "isExact": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "spellId": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Spell ID in WoW"
+    },
+    "trinket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["isActive", "type", "index"],
+      "properties": {
+        "index": {
+          "type": "string",
+          "enum": ["first", "second"]
+        },
+        "isActive": {
+          "type": "boolean",
+          "default": false
+        },
+        "type": {
+          "type": "string",
+          "enum": ["self-buff", "harmful", "harmful-aoe", "auto-determine"]
+        }
+      }
+    },
+    "petCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["isExists"],
+      "properties": {
+        "isExists": {
+          "type": "boolean",
+          "description": "Pet exists, dead or alive"
+        },
+        "isAlive": {
+          "type": "boolean",
+          "description": "Pet is alive"
+        },
+        "isVisible": {
+          "type": "boolean",
+          "description": "Pet is visible"
+        }
+      }
+    },
+    "unitIsUnitCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit1", "unit2"],
+      "properties": {
+        "unit1": {
+          "$ref": "#/definitions/criterionUnit"
+        },
+        "unit2": {
+          "$ref": "#/definitions/criterionUnit"
+        },
+        "result": {
+          "type": "boolean"
+        }
+      }
+    },
+    "inventorySlotCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "isExists"],
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/invSlotName"
+        },
+        "isExists": {
+          "type": "boolean"
+        },
+        "hasEnchant": {
+          "type": "boolean"
+        },
+        "itemType": {
+          "$ref": "#/definitions/itemType"
+        }
+      }
+    },
+    "itemType": {
+      "type": "string",
+      "enum": [
+        "consumable",
+        "container",
+        "weapon",
+        "gem",
+        "armor",
+        "reagent",
+        "projectile",
+        "tradegoods",
+        "item_enhancement",
+        "recipe",
+        "currency_token_obsolete",
+        "quiver",
+        "questitem",
+        "key",
+        "permanent_obsolete",
+        "miscellaneous",
+        "glyph",
+        "battlepet",
+        "wow_token",
+        "profession"
+      ]
+    },
+    "invSlotName": {
+      "type": "string",
+      "enum": [
+        "ammo",
+        "head",
+        "neck",
+        "shoulder",
+        "shirt",
+        "chest",
+        "waist",
+        "legs",
+        "feet",
+        "wrist",
+        "hands",
+        "finger0",
+        "finger1",
+        "trinket0",
+        "trinket1",
+        "back",
+        "mainhand",
+        "secondaryhand",
+        "ranged",
+        "tabard",
+        "prof0tool",
+        "prof0gear0",
+        "prof0gear1",
+        "prof1tool",
+        "prof1gear0",
+        "cookingtool",
+        "cookinggear0",
+        "fishingtool",
+        "fishinggear0",
+        "fishinggear1"
+      ]
+    },
+    "auraCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "isExists", "spell"],
+      "properties": {
+        "comment": {
+          "$ref": "#/definitions/comment"
+        },
+        "spell": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/spell"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "mechanics": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "rooted", "snared", "stunned", "silenced", "disoriented", "incapacitated", "fleeing", "charmed",
+                      "asleep", "frozen", "enraged", "horrified", "sapped", "banished", "polymorphed", "taunted",
+                      "confused", "possessed", "pacified", "shackled", "turned", "interrupted", "dazed", "feared",
+                      "disarmed", "invulnerable", "shielded"
+                    ]
+                  }
+                },
+                "dispelTypes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": ["magic", "curse", "disease", "poison", "enrage", "immunity"]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "unit": {
+          "$ref": "#/definitions/criterionUnit"
+        },
+        "isExists": {
+          "type": "boolean"
+        },
+        "filter": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "HELPFUL", "HARMFUL", "PLAYER", "RAID", "CANCELABLE", "NOT_CANCELABLE", "INCLUDE_NAME_PLATE_ONLY",
+              "MAW"
+            ]
+          }
+        },
+        "sourceUnit": {
+          "type": "string",
+          "enum": ["target", "player", "pet", "focus"]
+        },
+        "byPlayer": {
+          "type": "boolean",
+          "deprecationMessage": "Use `sourceUnit` instead"
+        },
+        "isPandemic": {
+          "type": "boolean"
+        },
+        "stacks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["conditions"],
+          "properties": {
+            "conditions": {
+              "$ref": "#/definitions/conditions"
+            }
+          }
+        },
+        "remainingDuration": {
+          "type": "object",
+          "required": ["conditions"],
+          "additionalProperties": false,
+          "properties": {
+            "inPercent": {
+              "type": "boolean",
+              "default": false
+            },
+            "conditions": {
+              "$ref": "#/definitions/conditions"
+            }
+          }
+        }
+      }
+    },
+    "glyphCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spellId", "comment", "isExists"],
+      "properties": {
+        "comment": {
+          "$ref": "#/definitions/comment"
+        },
+        "spellId": {
+          "$ref": "#/definitions/spellId"
+        },
+        "isExists": {
+          "type": "boolean"
+        }
+      }
+    },
+    "facingCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit1", "unit2", "isFacing"],
+      "properties": {
+        "unit1": {
+          "$ref": "#/definitions/criterionUnit"
+        },
+        "unit2": {
+          "$ref": "#/definitions/criterionUnit"
+        },
+        "isFacing": {
+          "type": "boolean"
+        }
+      }
+    },
+    "talentCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "spellId", "rank"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "English name of talent for logs"
+        },
+        "comment": {
+          "type": "string",
+          "description": "Optional comment to clarify things"
+        },
+        "spellId": {
+          "$ref": "#/definitions/spellId"
+        },
+        "rank": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["conditions"],
+          "properties": {
+            "conditions": {
+              "$ref": "#/definitions/conditions"
+            }
+          }
+        }
+      }
+    },
+    "logic": {
+      "type": "string",
+      "enum": ["and", "or"],
+      "default": "and",
+      "description": "Logic between items"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Just a comment, to make things more clear"
+    },
+    "rotationCriteria": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "comment": {
+          "type": "string",
+          "description": "Special field to add comments to set of criteria"
+        },
+        "logic": {
+          "$ref": "#/definitions/logic"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/rotationCriterion"
+              },
+              {
+                "$ref": "#/definitions/rotationCriteria"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "rotationCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "powers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/powerCriterion"
+          }
+        },
+        "health": {
+          "$ref": "#/definitions/healthCriterion"
+        },
+        "stagger": {
+          "$ref": "#/definitions/staggerCriterion"
+        },
+        "comment": {
+          "type": "string",
+          "description": "Special field to add comments to set of criteria"
+        },
+        "charges": {
+          "type": "object",
+          "required": ["spellId", "conditions"],
+          "additionalProperties": false,
+          "properties": {
+            "spellId": {
+              "type": "integer"
+            },
+            "conditions": {
+              "$ref": "#/definitions/conditions"
+            },
+            "remainingDurationConditions" : {
+              "$ref": "#/definitions/conditions"
+            }
+          }
+        },
+        "isSpellInRange": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["spellID", "isInRange", "unit"],
+          "properties": {
+            "comment": {
+              "$ref": "#/definitions/comment"
+            },
+            "spellID": {
+              "$ref": "#/definitions/spellId"
+            },
+            "isInRange": {
+              "type": "boolean"
+            },
+            "unit": {
+              "$ref": "#/definitions/criterionUnit"
+            }
+          }
+        },
+        "aura": {
+          "$ref": "#/definitions/auraCriterion"
+        },
+        "pet": {
+          "$ref": "#/definitions/petCriterion"
+        },
+        "distance": {
+          "$ref": "#/definitions/distanceCriterion"
+        },
+        "casting": {
+          "$ref": "#/definitions/castingCriterion"
+        },
+        "channeling": {
+          "$ref": "#/definitions/channelingCriterion"
+        },
+        "targetedBy": {
+          "$ref": "#/definitions/targetedByCriterion"
+        },
+        "totem": {
+          "$ref": "#/definitions/totemCriterion"
+        },
+        "checkUnits": {
+          "$ref": "#/definitions/checkUnitsCriterion"
+        },
+        "canAttack": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["unit1", "unit2", "canAttack"],
+          "properties": {
+            "unit1": {
+              "$ref": "#/definitions/criterionUnit"
+            },
+            "unit2": {
+              "$ref": "#/definitions/criterionUnit"
+            },
+            "canAttack": {
+              "type": "boolean"
+            }
+          }
+        },
+        "isAlive": {
+          "type": "object",
+          "deprecationMessage": "use isUnitAlive instead",
+          "additionalProperties": false,
+          "required": ["unit"],
+          "properties": {
+            "unit": {
+              "$ref": "#/definitions/criterionUnit"
+            }
+          }
+        },
+        "not": {
+          "oneOf": [
+            {"$ref": "#/definitions/rotationCriterion"},
+            {"$ref": "#/definitions/rotationCriteria"}
+          ]
+        },
+        "isDead": {
+          "type": "object",
+          "deprecationMessage": "use isUnitAlive instead",
+          "additionalProperties": false,
+          "required": ["unit"],
+          "properties": {
+            "unit": {
+              "$ref": "#/definitions/criterionUnit"
+            }
+          }
+        },
+        "creatureType": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "unit": {
+              "$ref": "#/definitions/criterionUnit"
+            },
+            "types": {
+              "type": "array",
+              "items": {
+                "description": "Creature type",
+                "type": "string",
+                "enum": [
+                  "beast", "dragonkin", "demon", "elemental", "giant", "undead", "humanoid", "critter", "mechanical",
+                  "not_specified", "totem", "non-combat_pet", "gas_cloud", "wild_pet", "aberration"
+                ]
+              }
+            }
+          }
+        },
+        "isUnitVisible": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["unit", "isVisible"],
+          "properties": {
+            "unit": {
+              "$ref": "#/definitions/criterionUnit"
+            },
+            "isVisible": {
+              "type": "boolean"
+            }
+          }
+        },
+        "isUnitExists": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["unit", "isExists"],
+          "properties": {
+            "unit": {
+              "$ref": "#/definitions/criterionUnit"
+            },
+            "isExists": {
+              "type": "boolean"
+            }
+          }
+        },
+        "isUnitAlive": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["unit", "isAlive"],
+          "properties": {
+            "unit": {
+              "$ref": "#/definitions/criterionUnit"
+            },
+            "isAlive": {
+              "type": "boolean"
+            }
+          }
+        },
+        "enemiesAround": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["unit", "conditions", "distance"],
+          "properties": {
+            "unit": {
+              "$ref": "#/definitions/criterionUnit"
+            },
+            "distance": {
+              "type": "integer"
+            },
+            "conditions": {
+              "$ref": "#/definitions/conditions"
+            }
+          }
+        },
+        "spellCooldown": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["spell", "conditions"],
+          "properties": {
+            "spell": {
+              "$ref": "#/definitions/spell"
+            },
+            "comment": {
+              "type": "string"
+            },
+            "conditions": {
+              "$ref": "#/definitions/conditions"
+            }
+          }
+        },
+        "trait": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["spellId", "isExists"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Name of the trait"
+            },
+            "spellId": {
+              "$ref": "#/definitions/spellId"
+            },
+            "isExists": {
+              "type": "boolean"
+            },
+            "rankConditions": {
+              "$ref": "#/definitions/conditions"
+            }
+          }
+        },
+        "pvpTalent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["spellId", "isExists"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Name of the trait. Just for information."
+            },
+            "spellId": {
+              "$ref": "#/definitions/spellId"
+            },
+            "isExists": {
+              "type": "boolean"
+            }
+          }
+        },
+        "preventMaxCharges": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "spellID": {
+              "type": "number"
+            }
+          }
+        },
+        "glyph": {
+          "$ref": "#/definitions/glyphCriterion"
+        },
+        "shapeshiftForm": {
+          "type": "object",
+          "required": ["conditions"],
+          "additionalProperties": false,
+          "properties": {
+            "conditions": {
+              "$ref": "#/definitions/conditions"
+            }
+          }
+        },
+        "isStealthed": {
+          "description": "Does the player have any stealth buff",
+          "type": "boolean"
+        },
+        "facing": {
+          "$ref": "#/definitions/facingCriterion"
+        },
+        "raidInstance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["isIn"],
+          "properties": {
+            "isIn": {
+              "type": "boolean",
+              "description": "Is the player in a raid instance"
+            }
+          }
+        },
+        "dungeonInstance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["isIn"],
+          "properties": {
+            "isIn": {
+              "type": "boolean",
+              "description": "Is the player in a dungeon instance"
+            }
+          }
+        },
+        "isSwimming" : {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["isSwimming"],
+          "properties": {
+            "isSwimming": {
+              "type": "boolean",
+              "description": "Is the player swimming"
+            }
+          }
+        },
+        "party": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["isIn"],
+          "properties": {
+            "isIn": {
+              "type": "boolean",
+              "description": "Is the player in a party"
+            },
+            "isRaid": {
+              "type": "boolean",
+              "description": "Is the player in a raid"
+            }
+          }
+        },
+        "threatSituation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["unit1", "unit2", "situations"],
+          "properties": {
+            "unit1": {
+              "$ref": "#/definitions/criterionUnit"
+            },
+            "unit2": {
+              "$ref": "#/definitions/criterionUnit"
+            },
+            "situations": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "no data",
+                  "low on threat",
+                  "high threat",
+                  "primary target but not on high threat",
+                  "primary target and high threat"
+                ]
+              }
+            }
+          }
+        },
+        "moving": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["unit", "isMoving"],
+          "properties": {
+            "isMoving": {
+              "type": "boolean"
+            },
+            "unit": {
+              "$ref": "#/definitions/criterionUnit"
+            }
+          }
+        },
+        "isSpellKnown": {
+          "type": "object",
+          "required": ["spellId", "isKnown"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "deprecated": true,
+              "description": "Name of the spell"
+            },
+            "comment": {
+              "type": "string",
+              "description": "optional description"
+            },
+            "spellId": {
+              "$ref": "#/definitions/spellId"
+            },
+            "bookType": {
+              "type": "string",
+              "enum": ["player", "pet"]
+            },
+            "isKnown": {
+              "type": "boolean"
+            }
+          }
+        },
+        "module": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id"],
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/moduleId"
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "unitIsUnit": {
+          "$ref": "#/definitions/unitIsUnitCriterion"
+        },
+        "inventorySlot": {
+          "$ref": "#/definitions/inventorySlotCriterion"
+        },
+        "talent": {
+          "$ref": "#/definitions/talentCriterion"
+        }
+      }
+    },
+    "moduleId": {
+      "type": "string",
+      "description": "Module ID",
+      "minLength": 1
+    },
+    "unitSort": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sortType"],
+      "properties": {
+        "sortType" : {
+          "type": "string",
+          "enum": ["health"]
+        },
+        "isAscending": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "units": {
+      "type": "array",
+      "description": "List of units to make an action on",
+      "minimum": 1,
+      "items": {
+        "type": "string",
+        "enum": ["target", "player", "pet", "focus", "partyN", "raidN", "focustarget"]
+      }
+    },
+    "rotationStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "comment": {
+          "type": "string",
+          "description": "Comment for that step",
+          "deprecationMessage": "Use fields name and description instead"
+        },
+        "debugLevel": {
+          "type": "integer",
+          "enum": [1, 2],
+          "description": "Debug level for that step"
+        },
+        "name": {
+          "type": "string",
+          "description": "Unique name of the step"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description for step"
+        },
+        "isOutOfCombat": {
+          "type": "boolean",
+          "description": "Check and launch that step while out of combat",
+          "default": false
+        },
+        "isUsableWhileChanneling": {
+          "type": "boolean",
+          "description": "This action can be used while channeling",
+          "default": false
+        },
+        "isCastableWhileMoving": {
+          "type": "boolean",
+          "description": "This action is castable (has cast bar) and usable while moving (like DF Hunter's spells)"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Is step active"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["cast", "trinket", "castGroundTarget", "cancelShapeshiftForm", "module", "simpleMove", "stopSpellCast", "useItem", "useMacro"]
+        },
+        "simpleMoveOpts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "timeout", "distance"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["backward", "forward", "left", "right"],
+              "description": "Type of movement"
+            },
+            "timeout": {
+              "type": "number",
+              "description": "Timeout in seconds"
+            },
+            "distance": {
+              "type": "object",
+              "required": ["conditions"],
+              "additionalProperties": false,
+              "properties": {
+                "conditions": {
+                  "$ref": "#/definitions/conditions"
+                }
+              }
+            }
+          }
+        },
+        "useItemOpts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["itemID"],
+          "properties": {
+            "itemID": {
+              "type": "number"
+            }
+          }
+        },
+        "castOpts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["spell"],
+          "properties": {
+            "spell": {
+              "$ref": "#/definitions/spell"
+            },
+            "isInstant": {
+              "type": "boolean",
+              "default": false,
+              "description": "Is this spell is instant (not GCD locked)"
+            },
+            "isNextMelee": {
+              "type": "boolean",
+              "default": false,
+              "description": "Is this spell type of 'next melee' (warrior's Heroic strike, for example)"
+            },
+            "isToggleable": {
+              "type": "boolean",
+              "description": "Is this spell is toggleable"
+            },
+            "considerAsGCDAction": {
+              "type": "boolean",
+              "description": "Consider this spell as GCD locked"
+            },
+            "artificialDelayAfterCast": {
+              "type": "number",
+              "description": "just delay, may be helpful with non-gcd casts"
+            },
+            "isNeedFacing": {
+              "type": "boolean",
+              "default": true,
+              "description": "Need to be faced to target"
+            },
+            "isInterrupter": {
+              "type": "boolean",
+              "default": false,
+              "description": "This spell interrupts casts"
+            },
+            "spread": {
+              "type": "object",
+              "required": ["isOn", "enemySelection"],
+              "additionalProperties": false,
+              "properties": {
+                "isOn": {
+                  "type": "boolean"
+                },
+                "enemySelection": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["criteria"],
+                  "properties": {
+                    "criteria": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "distance": {
+                          "type": "object",
+                          "required": ["conditions"],
+                          "additionalProperties": false,
+                          "properties": {
+                            "conditions": {
+                              "$ref": "#/definitions/conditions"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "trinketOpts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["trinkets"],
+          "properties": {
+            "trinkets": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/trinket"
+              }
+            }
+          }
+        },
+        "moduleOpts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name"],
+          "properties": {
+            "name": {"type": "string"},
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false
+            }
+          }
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["target", "player", "pet", "focus", "partyN", "raidN"],
+          "description": "Unit to act on. `partyN` = 'any party member';"
+        },
+        "hotkey": {
+          "type": "string",
+          "description": "value from hotkeyMap"
+        },
+        "ignoreHelpfulCheck": {
+          "type": "boolean",
+          "description": "ignore helpful spell check. Turn it on, if you have spells, which can be used on ally and foe",
+          "default": false
+        },
+        "ignoreHarmfulCheck": {
+          "type": "boolean",
+          "description": "ignore harmful spell check. Turn it on, if you have spells, which can be used on ally and foe",
+          "default": false
+        },
+        "unitSort": {
+          "$ref": "#/definitions/unitSort"
+        },
+        "units": {
+          "$ref": "#/definitions/units"
+        },
+        "actorUnit": {
+          "type": "string",
+          "default": "player",
+          "enum": ["player", "pet"]
+        },
+        "criteria": {
+          "$ref": "#/definitions/rotationCriteria"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cast"
+              }
+            }
+          },
+          "then": {
+            "anyOf": [{
+              "required": ["castOpts", "unit"]
+            },{
+              "required": ["castOpts", "units"]
+            }]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "useItem"
+              }
+            }
+          },
+          "then": {
+            "anyOf": [{
+              "required": ["useItemOpts", "unit"]
+            },{
+              "required": ["useItemOpts", "units"]
+            }]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "castGroundTarget"
+              }
+            }
+          },
+          "then": {
+            "required": ["castOpts", "unit"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "simpleMove"
+              }
+            }
+          },
+          "then": {
+            "required": ["simpleMoveOpts", "unit"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "module"
+              }
+            }
+          },
+          "then": {
+            "required": ["moduleOpts"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "trinket"
+              }
+            }
+          },
+          "then": {
+            "required": ["trinketOpts"]
+          }
+        }
+      ]
+    }
+  }
+}
