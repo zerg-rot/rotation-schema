@@ -1,7 +1,7 @@
 {
-  "$id": "https://berserk.com/rotation.schema.json",
+  "$id": "https://raw.githubusercontent.com/zerg-rot/schemas/refs/heads/main/src/combat_rotation.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "World of Warccraft combat emulator rotation description",
+  "title": "World of Warcraft combat emulator rotation description",
   "type": "object",
   "required": ["class", "spec", "expansion", "productId"],
   "additionalProperties": false,
