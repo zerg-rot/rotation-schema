@@ -1,0 +1,21 @@
+{
+  "$id": "https://raw.githubusercontent.com/zerg-rot/schemas/refs/heads/main/src/developer.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Developer's meta data",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Developer's name to show in UI"
+    },
+    "sysname": {
+      "type": "string",
+      "description": "Developer system name for internal use"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Developer email"
+    }
+  }
+}

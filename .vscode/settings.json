@@ -1,0 +1,13 @@
+{
+    "editor.rulers": [
+        120
+    ],
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "/src/**/*.json",
+            ],
+            "url": "https://json-schema.org/draft/2020-12/schema"
+        }
+    ]
+}
